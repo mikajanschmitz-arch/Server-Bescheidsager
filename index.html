@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Minecraft Server Monitor</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #9ca3af;
+        }
+
+        .card {
+            background: #1f2937;
+            padding: 18px;
+            margin-top: 18px;
+            border-radius: 12px;
+        }
+
+        .server {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #374151;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .server-info {
+            flex: 1;
+        }
+
+        .server-name {
+            font-weight: bold;
+        }
+
+        .server-address {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .secondary {
+            background: #4b5563;
+            color: white;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            border-radius: 7px;
+            border: 1px solid #4b5563;
+            background: #111827;
+            color: white;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
+        .message {
+            margin-top: 15px;
+            color: #93c5fd;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Brother-Wova Monitor</h1>
+
+    <div class="subtitle">
+        Minecraft Bedrock Server Monitor
+    </div>
+
+
+    <div class="card">
+
+        <h2>Meine Server</h2>
+
+        <div id="servers">
+            Lade Server...
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Server hinzufügen</h2>
+
+        <label>
+            Name
+        </label>
+
+        <input
+            id="serverName"
+            placeholder="z. B. Brother-Wova"
+        >
+
+
+        <label>
+            Adresse
+        </label>
+
+        <input
+            id="serverHost"
+            placeholder="z. B. Brother-Wova.aternos.me"
+        >
+
+
+        <label>
+            Port
+        </label>
+
+        <input
+            id="serverPort"
+            type="number"
+            placeholder="z. B. 53561"
+        >
+
+
+        <button
+            class="primary"
+            onclick="addServer()"
+        >
+            + Server hinzufügen
+        </button>
+
+    </div>
+
+
+    <div class="card">
+
+        <h2>Benachrichtigungen</h2>
+
+        <p>
+            Du bekommst eine Meldung,
+            wenn ein ausgewählter Server von
+            offline auf online wechselt.
+        </p>
+
+        <button
+            id="notificationButton"
+            class="primary"
+            onclick="enableNotifications()"
+        >
+            🔔 Benachrichtigungen aktivieren
+        </button>
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+    </div>
+
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+  </html>
