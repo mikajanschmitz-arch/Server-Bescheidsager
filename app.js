@@ -21,6 +21,10 @@ if (!clientId) {
 let servers = [];
 
 
+// ===============================
+// SERVER LADEN
+// ===============================
+
 async function loadConfig() {
 
     try {
@@ -62,6 +66,10 @@ async function loadConfig() {
 }
 
 
+// ===============================
+// SERVER ANZEIGEN
+// ===============================
+
 function renderServers() {
 
     const container =
@@ -87,6 +95,7 @@ function renderServers() {
             const div =
                 document.createElement("div");
 
+
             div.className =
                 "server";
 
@@ -98,12 +107,6 @@ function renderServers() {
                     <div class="server-name">
 
                         ${escapeHtml(server.name)}
-
-                    </div>
-
-                    <div class="server-address">
-
-                        ${escapeHtml(server.host)}:${server.port}
 
                     </div>
 
@@ -137,25 +140,40 @@ function renderServers() {
 }
 
 
+// ===============================
+// SERVER SPEICHERN
+// ===============================
+
 async function saveServers() {
 
     try {
 
-        await fetch(
-            `${API_URL}/api/config/${clientId}`,
-            {
-                method: "POST",
+        const response =
+            await fetch(
+                `${API_URL}/api/config/${clientId}`,
+                {
+                    method: "POST",
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                body: JSON.stringify({
-                    servers: servers
-                })
-            }
-        );
+                    body:
+                        JSON.stringify({
+                            servers: servers
+                        })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Server konnten nicht gespeichert werden."
+            );
+
+        }
 
 
         showMessage(
@@ -173,6 +191,10 @@ async function saveServers() {
 
 }
 
+
+// ===============================
+// SERVER HINZUFÜGEN
+// ===============================
 
 async function addServer() {
 
@@ -266,6 +288,10 @@ async function addServer() {
 }
 
 
+// ===============================
+// SERVER AKTIVIEREN / DEAKTIVIEREN
+// ===============================
+
 async function toggleServer(index) {
 
     servers[index].enabled =
@@ -276,6 +302,10 @@ async function toggleServer(index) {
 
 }
 
+
+// ===============================
+// SERVER LÖSCHEN
+// ===============================
 
 async function deleteServer(index) {
 
@@ -303,6 +333,10 @@ async function deleteServer(index) {
 
 }
 
+
+// ===============================
+// BENACHRICHTIGUNGEN AKTIVIEREN
+// ===============================
 
 async function enableNotifications() {
 
@@ -381,26 +415,36 @@ async function enableNotifications() {
         }
 
 
-        await fetch(
-            `${API_URL}/api/subscription/${clientId}`,
-            {
-                method: "POST",
+        const response =
+            await fetch(
+                `${API_URL}/api/subscription/${clientId}`,
+                {
+                    method: "POST",
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                body:
-                    JSON.stringify(
-                        subscription
-                    )
-            }
-        );
+                    body:
+                        JSON.stringify(
+                            subscription
+                        )
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Benachrichtigung konnte nicht registriert werden."
+            );
+
+        }
 
 
         showMessage(
-            "✅ Benachrichtigungen sind aktiviert."
+            "Benachrichtigungen sind aktiviert."
         );
 
 
@@ -426,6 +470,10 @@ async function enableNotifications() {
 
 }
 
+
+// ===============================
+// PUBLIC VAPID KEY LADEN
+// ===============================
 
 async function getPublicVapidKey() {
 
@@ -453,13 +501,18 @@ async function getPublicVapidKey() {
 }
 
 
+// ===============================
+// VAPID KEY UMFORMEN
+// ===============================
+
 function urlBase64ToUint8Array(
     base64String
 ) {
 
     const padding =
         "=".repeat(
-            (4 -
+            (
+                4 -
                 base64String.length % 4
             ) % 4
         );
@@ -488,9 +541,13 @@ function urlBase64ToUint8Array(
 }
 
 
+// ===============================
+// HTML SICHER DARSTELLEN
+// ===============================
+
 function escapeHtml(text) {
 
-    return text
+    return String(text)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -499,6 +556,10 @@ function escapeHtml(text) {
 
 }
 
+
+// ===============================
+// MELDUNGEN
+// ===============================
 
 function showMessage(message) {
 
@@ -509,5 +570,9 @@ function showMessage(message) {
 
 }
 
+
+// ===============================
+// START
+// ===============================
 
 loadConfig();
