@@ -40,6 +40,7 @@ def get_configs():
 
 
 def check_server(host, port):
+
     address = f"{host}:{port}"
 
     url = (
@@ -48,75 +49,195 @@ def check_server(host, port):
     )
 
     try:
+
         response = requests.get(
             url,
             timeout=15
         )
 
         if response.status_code != 200:
-            return False, 0
+            return False, 0, []
+
 
         data = response.json()
+
 
         online = bool(
             data.get("online", False)
         )
+
 
         players = data.get(
             "players",
             {}
         )
 
+
         player_count = players.get(
             "online",
             0
         )
 
-        return online, player_count
+
+        player_names = []
+
+
+        # Spielernamen aus der MCStatus-Antwort
+        sample = players.get(
+            "list",
+            []
+        )
+
+
+        if isinstance(sample, list):
+
+            for player in sample:
+
+                if isinstance(player, str):
+
+                    player_names.append(
+                        player
+                    )
+
+                elif isinstance(player, dict):
+
+                    name = player.get(
+                        "name"
+                    )
+
+                    if name:
+                        player_names.append(
+                            name
+                        )
+
+
+        return (
+            online,
+            player_count,
+            player_names
+        )
+
 
     except Exception as error:
+
         print(
             f"Fehler bei {address}: {error}"
         )
 
-        return False, 0
+        return False, 0, []
 
 
-def send_push(subscription, server, players):
+def send_push(
+    subscription,
+    server,
+    players,
+    player_names
+):
 
     if players == 1:
-        player_text = "1 Spieler ist online."
+
+        player_text = (
+            "1 Spieler ist online."
+        )
+
     else:
-        player_text = f"{players} Spieler sind online."
+
+        player_text = (
+            f"{players} Spieler sind online."
+        )
+
+
+    if player_names:
+
+        names_text = (
+            "\nSpieler: "
+            + ", ".join(player_names)
+        )
+
+    else:
+
+        names_text = ""
+
 
     payload = json.dumps({
+
         "title":
             f"🟢 {server['name']} ist online!",
 
         "body":
-            player_text,
+            player_text + names_text,
 
         "serverId":
             server["id"]
+
     })
 
+
     webpush(
+
         subscription_info=subscription,
+
         data=payload,
+
         vapid_private_key=VAPID_PRIVATE_KEY,
+
         vapid_claims={
-            "sub": "mailto:you@example.com"
+            "sub":
+                "mailto:you@example.com"
         },
+
         ttl=3600
     )
+
+
+def save_status_for_user(
+    client_id,
+    status_servers
+):
+
+    response = requests.post(
+
+        f"{BACKEND_URL}/internal/status",
+
+        headers={
+
+            "Authorization":
+                f"Bearer {BACKEND_SECRET}",
+
+            "Content-Type":
+                "application/json"
+
+        },
+
+        json={
+
+            "clientId":
+                client_id,
+
+            "servers":
+                status_servers
+
+        },
+
+        timeout=20
+    )
+
+
+    response.raise_for_status()
 
 
 def main():
 
     configs = get_configs()
+
     state = load_state()
 
     servers = {}
+
+
+    # ==========================================
+    # SERVER ZUSAMMENFASSEN
+    # ==========================================
 
     for config in configs:
 
@@ -131,45 +252,90 @@ def main():
             ):
                 continue
 
+
             server_key = (
                 f"{server['host']}:"
                 f"{server['port']}"
             )
 
+
             if server_key not in servers:
 
                 servers[server_key] = {
-                    "server": server,
-                    "users": []
+
+                    "server":
+                        server,
+
+                    "users":
+                        []
+
                 }
+
 
             servers[
                 server_key
             ]["users"].append(config)
 
 
+    # ==========================================
+    # SERVER PRÜFEN
+    # ==========================================
+
+    checked_servers = {}
+
+
     for server_key, info in servers.items():
 
         server = info["server"]
 
-        online, players = check_server(
-            server["host"],
-            server["port"]
+
+        online, players, player_names = (
+            check_server(
+                server["host"],
+                server["port"]
+            )
         )
+
 
         previous = state.get(
             server_key,
             False
         )
 
+
         print(
             f"{server['name']}: "
             f"online={online}, "
-            f"players={players}"
+            f"players={players}, "
+            f"names={player_names}"
         )
 
 
-        # Nur bei OFFLINE -> ONLINE benachrichtigen
+        checked_servers[
+            server_key
+        ] = {
+
+            "id":
+                server["id"],
+
+            "name":
+                server["name"],
+
+            "online":
+                online,
+
+            "players":
+                players,
+
+            "playerNames":
+                player_names
+
+        }
+
+
+        # ==========================================
+        # PUSH-NACHRICHT
+        # ==========================================
 
         if online and not previous:
 
@@ -178,9 +344,15 @@ def main():
                 try:
 
                     send_push(
+
                         config["subscription"],
+
                         server,
-                        players
+
+                        players,
+
+                        player_names
+
                     )
 
                 except Exception as error:
@@ -191,6 +363,75 @@ def main():
 
 
         state[server_key] = online
+
+
+    # ==========================================
+    # STATUS FÜR JEDEN BENUTZER SPEICHERN
+    # ==========================================
+
+    for config in configs:
+
+        client_id =
+            config["clientId"]
+
+
+        user_servers = []
+
+
+        for server in config.get(
+            "servers",
+            []
+        ):
+
+            server_key = (
+                f"{server['host']}:"
+                f"{server['port']}"
+            )
+
+
+            status = checked_servers.get(
+                server_key
+            )
+
+
+            if status:
+
+                user_servers.append({
+
+                    "id":
+                        status["id"],
+
+                    "name":
+                        status["name"],
+
+                    "online":
+                        status["online"],
+
+                    "players":
+                        status["players"],
+
+                    "playerNames":
+                        status["playerNames"]
+
+                })
+
+
+        try:
+
+            save_status_for_user(
+
+                client_id,
+
+                user_servers
+
+            )
+
+        except Exception as error:
+
+            print(
+                "Status konnte nicht "
+                f"gespeichert werden: {error}"
+            )
 
 
     save_state(state)
