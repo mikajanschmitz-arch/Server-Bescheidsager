@@ -1,5 +1,5 @@
 const API_URL =
-    "https://minecraft-monitor.mikajan-schmitz.workers.dev/";
+    "https://minecraft-monitor.mikajan-schmitz.workers.dev";
 
 
 let clientId =
