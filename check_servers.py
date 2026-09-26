@@ -58,40 +58,32 @@ def check_server(host, port):
         if response.status_code != 200:
             return False, 0, []
 
-
         data = response.json()
-
 
         online = bool(
             data.get("online", False)
         )
-
 
         players = data.get(
             "players",
             {}
         )
 
-
         player_count = players.get(
             "online",
             0
         )
 
-
         player_names = []
 
-
-        # Spielernamen aus der MCStatus-Antwort
-        sample = players.get(
+        player_list = players.get(
             "list",
             []
         )
 
+        if isinstance(player_list, list):
 
-        if isinstance(sample, list):
-
-            for player in sample:
+            for player in player_list:
 
                 if isinstance(player, str):
 
@@ -101,22 +93,18 @@ def check_server(host, port):
 
                 elif isinstance(player, dict):
 
-                    name = player.get(
-                        "name"
-                    )
+                    name = player.get("name")
 
                     if name:
                         player_names.append(
                             name
                         )
 
-
         return (
             online,
             player_count,
             player_names
         )
-
 
     except Exception as error:
 
@@ -136,16 +124,13 @@ def send_push(
 
     if players == 1:
 
-        player_text = (
-            "1 Spieler ist online."
-        )
+        player_text = "1 Spieler ist online."
 
     else:
 
         player_text = (
             f"{players} Spieler sind online."
         )
-
 
     if player_names:
 
@@ -157,7 +142,6 @@ def send_push(
     else:
 
         names_text = ""
-
 
     payload = json.dumps({
 
@@ -171,7 +155,6 @@ def send_push(
             server["id"]
 
     })
-
 
     webpush(
 
@@ -222,7 +205,6 @@ def save_status_for_user(
         timeout=20
     )
 
-
     response.raise_for_status()
 
 
@@ -252,12 +234,10 @@ def main():
             ):
                 continue
 
-
             server_key = (
                 f"{server['host']}:"
                 f"{server['port']}"
             )
-
 
             if server_key not in servers:
 
@@ -270,7 +250,6 @@ def main():
                         []
 
                 }
-
 
             servers[
                 server_key
@@ -288,7 +267,6 @@ def main():
 
         server = info["server"]
 
-
         online, players, player_names = (
             check_server(
                 server["host"],
@@ -296,12 +274,10 @@ def main():
             )
         )
 
-
         previous = state.get(
             server_key,
             False
         )
-
 
         print(
             f"{server['name']}: "
@@ -371,9 +347,7 @@ def main():
 
     for config in configs:
 
-        client_id =
-            config["clientId"]
-
+        client_id = config["clientId"]
 
         user_servers = []
 
