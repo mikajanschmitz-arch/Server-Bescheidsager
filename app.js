@@ -21,9 +21,9 @@ if (!clientId) {
 let servers = [];
 
 
-// ===============================
-// SERVER LADEN
-// ===============================
+// ==========================================
+// SERVERKONFIGURATION LADEN
+// ==========================================
 
 async function loadConfig() {
 
@@ -55,6 +55,9 @@ async function loadConfig() {
         renderServers();
 
 
+        await loadStatus();
+
+
     } catch (error) {
 
         showMessage(
@@ -66,11 +69,55 @@ async function loadConfig() {
 }
 
 
-// ===============================
-// SERVER ANZEIGEN
-// ===============================
+// ==========================================
+// SERVERSTATUS LADEN
+// ==========================================
 
-function renderServers() {
+async function loadStatus() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/status/${clientId}`
+            );
+
+
+        if (!response.ok) {
+
+            return;
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const statuses =
+            data.servers || [];
+
+
+        renderServers(statuses);
+
+
+    } catch (error) {
+
+        console.error(
+            "Status konnte nicht geladen werden:",
+            error
+        );
+
+    }
+
+}
+
+
+// ==========================================
+// SERVER ANZEIGEN
+// ==========================================
+
+function renderServers(statuses = []) {
 
     const container =
         document.getElementById("servers");
@@ -100,6 +147,82 @@ function renderServers() {
                 "server";
 
 
+            const status =
+                statuses.find(
+                    item =>
+                        item.id === server.id
+                );
+
+
+            let statusHtml =
+                `<div class="server-status">
+                    ⚪ Status wird geladen...
+                </div>`;
+
+
+            if (status) {
+
+                if (status.online) {
+
+                    let playerText =
+                        `${status.players} Spieler online`;
+
+
+                    if (
+                        status.players === 1
+                    ) {
+
+                        playerText =
+                            "1 Spieler online";
+
+                    }
+
+
+                    statusHtml =
+                        `
+                        <div class="server-status">
+                            🟢 Online
+                        </div>
+
+                        <div class="server-players">
+                            ${playerText}
+                        </div>
+                        `;
+
+
+                    if (
+                        status.playerNames &&
+                        status.playerNames.length > 0
+                    ) {
+
+                        statusHtml +=
+                            `
+                            <div class="server-player-names">
+                                ${status.playerNames
+                                    .map(
+                                        name =>
+                                            escapeHtml(name)
+                                    )
+                                    .join(", ")}
+                            </div>
+                            `;
+
+                    }
+
+                } else {
+
+                    statusHtml =
+                        `
+                        <div class="server-status">
+                            🔴 Offline
+                        </div>
+                        `;
+
+                }
+
+            }
+
+
             div.innerHTML = `
 
                 <div class="server-info">
@@ -109,6 +232,8 @@ function renderServers() {
                         ${escapeHtml(server.name)}
 
                     </div>
+
+                    ${statusHtml}
 
                 </div>
 
@@ -140,9 +265,9 @@ function renderServers() {
 }
 
 
-// ===============================
+// ==========================================
 // SERVER SPEICHERN
-// ===============================
+// ==========================================
 
 async function saveServers() {
 
@@ -192,9 +317,9 @@ async function saveServers() {
 }
 
 
-// ===============================
+// ==========================================
 // SERVER HINZUFÜGEN
-// ===============================
+// ==========================================
 
 async function addServer() {
 
@@ -285,12 +410,15 @@ async function addServer() {
 
     renderServers();
 
+
+    await loadStatus();
+
 }
 
 
-// ===============================
+// ==========================================
 // SERVER AKTIVIEREN / DEAKTIVIEREN
-// ===============================
+// ==========================================
 
 async function toggleServer(index) {
 
@@ -300,12 +428,15 @@ async function toggleServer(index) {
 
     await saveServers();
 
+
+    await loadStatus();
+
 }
 
 
-// ===============================
+// ==========================================
 // SERVER LÖSCHEN
-// ===============================
+// ==========================================
 
 async function deleteServer(index) {
 
@@ -331,12 +462,15 @@ async function deleteServer(index) {
 
     renderServers();
 
+
+    await loadStatus();
+
 }
 
 
-// ===============================
+// ==========================================
 // BENACHRICHTIGUNGEN AKTIVIEREN
-// ===============================
+// ==========================================
 
 async function enableNotifications() {
 
@@ -471,9 +605,9 @@ async function enableNotifications() {
 }
 
 
-// ===============================
+// ==========================================
 // PUBLIC VAPID KEY LADEN
-// ===============================
+// ==========================================
 
 async function getPublicVapidKey() {
 
@@ -501,9 +635,9 @@ async function getPublicVapidKey() {
 }
 
 
-// ===============================
+// ==========================================
 // VAPID KEY UMFORMEN
-// ===============================
+// ==========================================
 
 function urlBase64ToUint8Array(
     base64String
@@ -541,9 +675,9 @@ function urlBase64ToUint8Array(
 }
 
 
-// ===============================
+// ==========================================
 // HTML SICHER DARSTELLEN
-// ===============================
+// ==========================================
 
 function escapeHtml(text) {
 
@@ -557,9 +691,9 @@ function escapeHtml(text) {
 }
 
 
-// ===============================
+// ==========================================
 // MELDUNGEN
-// ===============================
+// ==========================================
 
 function showMessage(message) {
 
@@ -571,8 +705,18 @@ function showMessage(message) {
 }
 
 
-// ===============================
+// ==========================================
+// AUTOMATISCHEN STATUS AKTUALISIEREN
+// ==========================================
+
+setInterval(
+    loadStatus,
+    30000
+);
+
+
+// ==========================================
 // START
-// ===============================
+// ==========================================
 
 loadConfig();
